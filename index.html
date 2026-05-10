@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LIGHT — Offensive Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&family=DM+Serif+Display:ital@0;1&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #080808;
+      --surface: #0f0f0f;
+      --border: #1a1a1a;
+      --text: #e8e3d9;
+      --muted: #5a5550;
+      --accent: #c8f53f;
+      --accent2: #ff4d1c;
+      --accent3: #4dc8ff;
+      --mono: 'Space Mono', monospace;
+      --sans: 'Syne', sans-serif;
+      --serif: 'DM Serif Display', serif;
+    }
+
+    *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); cursor: none; overflow-x: hidden; }
+
+    /* CURSOR */
+    #cursor { position: fixed; width: 12px; height: 12px; background: var(--accent); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); transition: width .2s, height .2s, background .2s, border-radius .2s; mix-blend-mode: difference; }
+    #cursor-ring { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(200,245,63,.4); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); transition: transform .08s linear, width .3s, height .3s, border-color .3s; }
+    body:has(a:hover) #cursor, body:has(button:hover) #cursor { width: 6px; height: 6px; }
+    body:has(a:hover) #cursor-ring, body:has(button:hover) #cursor-ring { width: 60px; height: 60px; border-color: var(--accent); }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 3rem; mix-blend-mode: difference; }
+    .nav-logo { font-family: var(--mono); font-size: .75rem; letter-spacing: .15em; color: var(--text); text-decoration: none; }
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-links a { font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; color: var(--muted); text-decoration: none; text-transform: uppercase; transition: color .3s; }
+    .nav-links a:hover { color: var(--text); }
+
+    /* HERO */
+    #hero { position: relative; height: 100vh; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; }
+    .hero-left, .hero-right { position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 4rem 3rem; transition: flex .6s cubic-bezier(.77,0,.175,1); overflow: hidden; }
+    .hero-left { background: var(--bg); border-right: 1px solid var(--border); }
+    .hero-right { background: var(--accent); }
+    #hero:has(.hero-left:hover) .hero-left { flex: 1.6; }
+    #hero:has(.hero-left:hover) .hero-right { flex: 0.4; }
+    #hero:has(.hero-right:hover) .hero-right { flex: 1.6; }
+    #hero:has(.hero-right:hover) .hero-left { flex: 0.4; }
+    .hero-tag { font-family: var(--mono); font-size: .65rem; letter-spacing: .2em; text-transform: uppercase; margin-bottom: 1rem; opacity: .5; }
+    .hero-left .hero-tag { color: var(--muted); }
+    .hero-right .hero-tag { color: rgba(8,8,8,.5); }
+    .hero-title { font-family: var(--serif); font-size: clamp(3rem,6vw,5.5rem); line-height: 1; letter-spacing: -.02em; }
+    .hero-left .hero-title { color: var(--text); }
+    .hero-right .hero-title { color: var(--bg); font-style: italic; }
+    .hero-sub { font-family: var(--mono); font-size: .75rem; margin-top: 1.5rem; line-height: 1.8; }
+    .hero-left .hero-sub { color: var(--muted); }
+    .hero-right .hero-sub { color: rgba(8,8,8,.6); }
+    .hero-right::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px); pointer-events: none; }
+    .hero-divider { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 10; width: 2px; height: 80px; background: linear-gradient(to bottom, transparent, var(--accent), transparent); }
+
+    /* TICKER */
+    .ticker-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 32px; background: var(--bg); border-top: 1px solid var(--border); display: flex; align-items: center; overflow: hidden; z-index: 100; }
+    .ticker-label { font-family: var(--mono); font-size: .6rem; color: var(--accent); padding: 0 1rem; letter-spacing: .1em; white-space: nowrap; border-right: 1px solid var(--border); height: 100%; display: flex; align-items: center; }
+    .ticker-track { display: flex; animation: ticker 30s linear infinite; white-space: nowrap; }
+    .ticker-track span { font-family: var(--mono); font-size: .6rem; color: var(--muted); padding: 0 2rem; letter-spacing: .05em; }
+    .ticker-track span em { color: var(--accent); font-style: normal; }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* SECTIONS */
+    section { padding: 5rem 3rem; max-width: 1200px; margin: 0 auto; }
+    .section-label { font-family: var(--mono); font-size: .65rem; letter-spacing: .25em; text-transform: uppercase; color: var(--accent); margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ABOUT */
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+    .about-left { display: flex; flex-direction: column; }
+    .about-headline { font-family: var(--serif); font-size: clamp(2.5rem,4vw,3.5rem); line-height: 1.1; letter-spacing: -.02em; }
+    .about-headline em { font-style: italic; color: var(--accent); }
+    .about-body { font-family: var(--mono); font-size: .8rem; line-height: 2; color: var(--muted); margin-top: 1.5rem; }
+    .mindset-list { display: flex; flex-direction: column; gap: 0; margin-top: 2rem; border-top: 1px solid var(--border); }
+    .mindset-item { display: flex; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; transition: padding-left .3s cubic-bezier(.77,0,.175,1); }
+    .mindset-item:hover { padding-left: .75rem; }
+    .mindset-item:hover .mindset-line { width: 24px; background: var(--accent); }
+    .mindset-item:hover .mindset-text { color: var(--text); }
+    .mindset-item:hover .mindset-tag { color: var(--accent); }
+    .mindset-line { width: 16px; height: 1px; background: var(--muted); flex-shrink: 0; transition: width .3s, background .3s; }
+    .mindset-text { font-family: var(--mono); font-size: .75rem; color: var(--muted); flex: 1; transition: color .3s; letter-spacing: .02em; }
+    .mindset-tag { font-family: var(--mono); font-size: .6rem; color: #2a2a2a; letter-spacing: .1em; text-transform: uppercase; transition: color .3s; }
+    .terminal { background: #0a0a0a; border: 1px solid var(--border); border-radius: 0; padding: 2rem; margin-top: 3rem; position: relative; }
+    .terminal-bar { display: flex; gap: .5rem; margin-bottom: 1.5rem; }
+    .t-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .t-dot:nth-child(1) { background: #ff5f57; }
+    .t-dot:nth-child(2) { background: #ffbd2e; }
+    .t-dot:nth-child(3) { background: #28c840; }
+    .terminal-line { font-family: var(--mono); font-size: .75rem; line-height: 2; color: var(--muted); }
+    .terminal-line .cmd { color: var(--accent); }
+    .terminal-line .out { color: var(--text); }
+    .terminal-line .comment { color: #3a3a3a; }
+    .cursor-blink { display: inline-block; width: 8px; height: 14px; background: var(--accent); animation: blink .8s step-end infinite; vertical-align: middle; margin-left: 2px; }
+    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+
+    /* ═══════════════════════════════════════
+       TERMINAL TREE SECTION
+    ════════════════════════════════════════ */
+    #work { max-width: 1200px; }
+
+    .tree-container {
+      position: relative;
+      padding: 0;
+    }
+
+    /* Scanline ambiance */
+    .tree-container::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(200,245,63,.012) 3px,
+        rgba(200,245,63,.012) 4px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .tree-header {
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--muted);
+      margin-bottom: .5rem;
+      letter-spacing: .05em;
+    }
+
+    .tree-header .path { color: var(--accent); }
+    .tree-header .branch { color: #3a6b00; }
+
+    .tree-prompt {
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+    .tree-prompt .user { color: var(--accent); }
+    .tree-prompt .at { color: #5a5550; }
+    .tree-prompt .cmd { color: var(--text); }
+
+    .tree-body {
+      position: relative;
+      z-index: 1;
+    }
+
+    .tree-line {
+      font-family: var(--mono);
+      font-size: .78rem;
+      line-height: 1.9;
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+      white-space: pre;
+      cursor: default;
+      position: relative;
+    }
+
+    /* Hover highlight bar */
+    .tree-line.hoverable {
+      border-radius: 0;
+      transition: background .15s;
+    }
+    .tree-line.hoverable:hover {
+      background: rgba(200,245,63,.04);
+    }
+    .tree-line.hoverable:hover .tree-leaf-name {
+      color: var(--text);
+    }
+    .tree-line.hoverable:hover .tree-leaf-tag {
+      opacity: 1;
+    }
+
+    /* Tree characters */
+    .tree-chars {
+      color: #2e2e2e;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    /* Directory names */
+    .tree-dir {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* Leaf node name */
+    .tree-leaf-name {
+      color: var(--muted);
+      transition: color .15s;
+    }
+
+    /* Inline tags after leaf */
+    .tree-leaf-tag {
+      font-size: .62rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-left: 1.5rem;
+      opacity: 0;
+      transition: opacity .2s;
+      white-space: nowrap;
+    }
+    .tree-leaf-tag.tag-algo  { color: #4dc8ff; }
+    .tree-leaf-tag.tag-cloud { color: #c8a03f; }
+    .tree-leaf-tag.tag-dsa   { color: var(--accent); }
+    .tree-leaf-tag.tag-sys   { color: #ff7b4d; }
+
+    /* Directory open/close indicator */
+    .tree-dir-row {
+      display: flex;
+      align-items: baseline;
+      gap: .4rem;
+    }
+    .tree-dir-bracket { color: #3a3a3a; font-size: .65rem; }
+
+    /* Summary line at bottom */
+    .tree-summary {
+      font-family: var(--mono);
+      font-size: .68rem;
+      color: #3a3a3a;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      letter-spacing: .05em;
+    }
+    .tree-summary em { color: var(--accent); font-style: normal; }
+
+    /* Blinking cursor at end */
+    .tree-cursor {
+      display: inline-block;
+      width: 7px;
+      height: .85em;
+      background: var(--accent);
+      animation: blink .9s step-end infinite;
+      vertical-align: -1px;
+      margin-left: 3px;
+    }
+
+    /* CHESS */
+    .chess-section { padding: 0; margin: 0; overflow: hidden; height: 60vh; position: relative; display: flex; align-items: center; justify-content: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .chess-bg { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(8,1fr); grid-template-rows: repeat(4,1fr); opacity: .06; }
+    .chess-cell { border: 1px solid var(--muted); }
+    .chess-center { position: relative; z-index: 2; text-align: center; }
+    .chess-figure { font-size: clamp(6rem,15vw,12rem); line-height: 1; display: block; animation: float 4s ease-in-out infinite; filter: drop-shadow(0 0 40px rgba(200,245,63,.2)); color: var(--text); }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+    .chess-quote { font-family: var(--serif); font-size: clamp(1.2rem,2.5vw,1.8rem); font-style: italic; color: var(--muted); margin-top: 1.5rem; letter-spacing: -.01em; }
+    .chess-quote em { color: var(--accent); font-style: normal; }
+
+    /* CONTACT */
+    .contact-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center; }
+    .contact-big { font-family: var(--serif); font-size: clamp(3rem,5vw,4.5rem); line-height: 1.05; letter-spacing: -.03em; }
+    .contact-big em { color: var(--accent); font-style: italic; }
+    .contact-links { display: flex; flex-direction: column; gap: 1.5rem; }
+    .contact-link { display: flex; align-items: center; justify-content: space-between; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--text); transition: color .3s; }
+    .contact-link:hover { color: var(--accent); }
+    .contact-link-label { font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; }
+    .contact-link-val { font-family: var(--sans); font-weight: 700; font-size: 1rem; }
+    .contact-link-arrow { font-size: 1.2rem; opacity: .4; }
+
+    /* GLITCH */
+    .glitch { position: relative; display: inline-block; }
+    .glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    .glitch::before { color: var(--accent2); animation: glitch1 4s infinite; clip-path: polygon(0 30%,100% 30%,100% 50%,0 50%); }
+    .glitch::after { color: var(--accent3); animation: glitch2 4s infinite; clip-path: polygon(0 60%,100% 60%,100% 80%,0 80%); }
+    @keyframes glitch1 { 0%,94%,100% { transform: translate(0); opacity: 0; } 95% { transform: translate(-3px,1px); opacity: 1; } 97% { transform: translate(3px,-1px); opacity: 1; } 99% { transform: translate(-2px,0); opacity: 1; } }
+    @keyframes glitch2 { 0%,94%,100% { transform: translate(0); opacity: 0; } 96% { transform: translate(3px,2px); opacity: 1; } 98% { transform: translate(-3px,-1px); opacity: 1; } }
+
+    /* REVEAL */
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity .8s cubic-bezier(.25,.46,.45,.94), transform .8s cubic-bezier(.25,.46,.45,.94); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: .1s; }
+    .reveal-delay-2 { transition-delay: .2s; }
+    .reveal-delay-3 { transition-delay: .3s; }
+
+    /* NOISE */
+    body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 9997; opacity: .4; }
+
+    /* FOOTER */
+    footer { border-top: 1px solid var(--border); padding: 2rem 3rem 4rem; display: flex; align-items: center; justify-content: space-between; background: var(--bg); position: relative; z-index: 10; }
+    footer span { font-family: var(--mono); font-size: .6rem; color: var(--muted); letter-spacing: .1em; }
+
+    /* SIDE DOTS */
+    .side-dots { position: fixed; right: 1.5rem; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: .75rem; z-index: 100; }
+    .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--muted); transition: background .3s, height .3s; cursor: none; }
+    .dot.active { background: var(--accent); height: 16px; border-radius: 2px; }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      nav { padding: 1.2rem 1.5rem; }
+      .nav-links { gap: 1.2rem; }
+      section { padding: 5rem 1.5rem; }
+      .about-grid, .contact-wrap { grid-template-columns: 1fr; gap: 3rem; }
+      .hero-left, .hero-right { padding: 3rem 1.5rem; }
+      #hero { grid-template-columns: 1fr; height: auto; }
+      .hero-right { min-height: 50vh; }
+      .side-dots { display: none; }
+      .chess-section { height: 40vh; }
+      .tree-line { font-size: .68rem; }
+      .tree-leaf-tag { display: none; }
+    }
+    @media (max-width: 480px) {
+      .hero-title { font-size: 2.2rem; }
+      .about-headline { font-size: 1.8rem; }
+      .contact-big { font-size: 2rem; }
+      nav { padding: 1rem; flex-wrap: wrap; justify-content: center; gap: .5rem; }
+      .nav-logo { width: 100%; text-align: center; margin-bottom: .5rem; }
+      .nav-links { gap: 1rem; justify-content: center; width: 100%; }
+      .nav-links a { font-size: .55rem; }
+      section { padding: 3rem 1.2rem; }
+      footer { padding: 2rem 1.2rem; flex-direction: column; gap: 1rem; text-align: center; }
+    }
+    @media (hover: none) and (pointer: coarse) {
+      #cursor, #cursor-ring { display: none !important; }
+      body, .focus-cell { cursor: auto; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="cursor"></div>
+  <div id="cursor-ring"></div>
+
+  <nav>
+    <a href="#" class="nav-logo">◈ LIGHT</a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#work">Skills</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="side-dots">
+    <div class="dot active" data-section="hero"></div>
+    <div class="dot" data-section="about"></div>
+    <div class="dot" data-section="work"></div>
+    <div class="dot" data-section="contact"></div>
+  </div>
+
+  <div id="hero">
+    <div class="hero-left">
+      <span class="hero-tag">// mode_01 — offense</span>
+      <h1 class="hero-title glitch" data-text="Hack.">Hack.</h1>
+      <p class="hero-sub">CTF competitions · Penetration thinking<br>Cybersecurity · Systems deep-dive</p>
+    </div>
+    <div class="hero-divider"></div>
+    <div class="hero-right">
+      <span class="hero-tag">// mode_02 — build</span>
+      <h1 class="hero-title">Build.</h1>
+      <p class="hero-sub">Web · Cloud · Algorithms<br>Systems that hold under pressure</p>
+    </div>
+  </div>
+
+  <div class="chess-section">
+    <div class="chess-bg" id="chessBoard"></div>
+    <div class="chess-center">
+      <span class="chess-figure" id="chessFig">♟</span>
+      <p class="chess-quote">Every system has a <em>vulnerability.</em><br>Every problem has a <em>solution.</em></p>
+    </div>
+  </div>
+
+  <div class="ticker-bar">
+    <div class="ticker-label">// live.feed</div>
+    <div style="overflow:hidden;flex:1">
+      <div class="ticker-track">
+        <span><em>CTF</em> — web exploitation · XSS → RCE in 4 steps</span>
+        <span><em>LeetCode</em> — #hard solved · graph BFS, O(V+E)</span>
+        <span><em>Cloud</em> — container orchestration · zero downtime on deploy</span>
+        <span><em>Web</em> — new portfolio live · built by hand, no frameworks</span>
+        <span><em>Database</em> — slow query fixed · 840ms → 9ms with index</span>
+        <span><em>CTF</em> — forensics · recovered flag from corrupted memory dump</span>
+        <span><em>Algo</em> — dynamic programming · knapsack variant, clean O(n·W)</span>
+        <span><em>CTF</em> — web exploitation · XSS → RCE in 4 steps</span>
+        <span><em>LeetCode</em> — #hard solved · graph BFS, O(V+E)</span>
+        <span><em>Cloud</em> — container orchestration · zero downtime on deploy</span>
+        <span><em>Web</em> — new portfolio live · built by hand, no frameworks</span>
+        <span><em>Database</em> — slow query fixed · 840ms → 9ms with index</span>
+        <span><em>CTF</em> — forensics · recovered flag from corrupted memory dump</span>
+        <span><em>Algo</em> — dynamic programming · knapsack variant, clean O(n·W)</span>
+      </div>
+    </div>
+  </div>
+
+  <section id="about">
+    <div class="section-label">01 — Who I am</div>
+    <div class="about-grid">
+      <div class="about-left">
+        <h2 class="about-headline reveal">Curiosity with<br><em>root</em> access.</h2>
+        <p class="about-body reveal reveal-delay-1">Systems, algorithms, cloud shit...<br><br>
+          I go deep on all of it. Not because I have to, because I genuinely can't leave something alone until I understand what's actually happening underneath.
+          That's the part that gets me — not the surface, not the tutorial version. The actual mechanics.
+          Why it breaks, why it scales, why it doesn't.
+          I've spent nights on a single data structure just because something felt off.<br><br>
+          That's not discipline. That's just how my brain works.
+        </p>
+        <div class="mindset-list reveal reveal-delay-2">
+          <div class="mindset-item">
+            <span class="mindset-line"></span>
+            <span class="mindset-text">I break things to understand them</span>
+            <span class="mindset-tag">/ offense</span>
+          </div>
+          <div class="mindset-item">
+            <span class="mindset-line"></span>
+            <span class="mindset-text">I build things worth attacking</span>
+            <span class="mindset-tag">/ defense</span>
+          </div>
+          <div class="mindset-item">
+            <span class="mindset-line"></span>
+            <span class="mindset-text">I build architectures that scale and survive</span>
+            <span class="mindset-tag">/ resilience</span>
+          </div>
+          <div class="mindset-item">
+            <span class="mindset-line"></span>
+            <span class="mindset-text">I never stop at the surface level</span>
+            <span class="mindset-tag">/ depth</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="terminal reveal reveal-delay-3">
+          <div class="terminal-bar">
+            <div class="t-dot"></div>
+            <div class="t-dot"></div>
+            <div class="t-dot"></div>
+          </div>
+          <div class="terminal-line"><span class="comment"># current status</span></div>
+          <div class="terminal-line"><span class="cmd">$ whoami</span></div>
+          <div class="terminal-line"><span class="out">→ system breaker, offensive builder</span></div>
+          <div class="terminal-line"><span class="cmd">$ cat interests.txt</span></div>
+          <div class="terminal-line"><span class="out">→ cybersec, algorithms, cloud, web, db, HFT</span></div>
+          <div class="terminal-line"><span class="cmd">$ ls tools/</span></div>
+          <div class="terminal-line"><span class="out">→ nmap wireshark tcpdump burpsuite</span></div>
+          <div class="terminal-line"><span class="cmd">$ status</span></div>
+          <div class="terminal-line"><span class="out">→ always building something<span class="cursor-blink"></span></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       02 — TERMINAL TREE SKILLS
+  ════════════════════════════════════════ -->
+  <section id="work">
+    <div class="section-label">02 — Skill Tree</div>
+
+    <div class="tree-container reveal">
+
+      <div class="tree-header">
+        <span class="path">~/light/skills</span>
+        &nbsp;<span class="branch">(main)</span>
+      </div>
+      <div class="tree-prompt">
+        <span class="user">light</span><span class="at">@</span><span class="user">arch</span><span class="at">:~/skills</span> <span class="cmd">$ tree -a --dirsfirst</span>
+      </div>
+
+      <div class="tree-body" id="treeBody"></div>
+
+      <div class="tree-summary">
+        <span><em>2</em> directories &nbsp;·&nbsp; <em>14</em> competencies &nbsp;·&nbsp; <em>∞</em> depth</span>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="section-label">03 — Get in touch</div>
+    <div class="contact-wrap">
+      <div>
+        <h2 class="contact-big reveal">Let's build<br>something<br><em>worth breaking.</em></h2>
+      </div>
+      <div class="contact-links reveal reveal-delay-1">
+        <a href="mailto:melihlight@gmail.com" class="contact-link">
+          <div>
+            <div class="contact-link-label">Email</div>
+            <div class="contact-link-val">melihlight@gmail.com</div>
+          </div>
+          <span class="contact-link-arrow">→</span>
+        </a>
+        <a href="https://github.com/melihlight" target="_blank" class="contact-link">
+          <div>
+            <div class="contact-link-label">GitHub</div>
+            <div class="contact-link-val">github.com/melihlight</div>
+          </div>
+          <span class="contact-link-arrow">→</span>
+        </a>
+        <a href="https://www.linkedin.com/in/melihlight/" target="_blank" class="contact-link">
+          <div>
+            <div class="contact-link-label">LinkedIn</div>
+            <div class="contact-link-val">linkedin.com/in/melihlight</div>
+          </div>
+          <span class="contact-link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>&copy; 2026 LIGHT. All rights reserved.</span>
+    <span>Offensive Builder</span>
+  </footer>
+
+  <script>
+    /* ── CURSOR ── */
+    const cursor = document.getElementById('cursor');
+    const ring   = document.getElementById('cursor-ring');
+    let mx=0,my=0,rx=0,ry=0;
+    if(window.matchMedia("(hover: hover)").matches){
+      document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+      (function animCursor(){
+        cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+        rx+=(mx-rx)*.12; ry+=(my-ry)*.12;
+        ring.style.left=rx+'px'; ring.style.top=ry+'px';
+        requestAnimationFrame(animCursor);
+      })();
+    }
+
+    /* ── CHESS BOARD ── */
+    const board=document.getElementById('chessBoard');
+    for(let i=0;i<32;i++){const c=document.createElement('div');c.className='chess-cell';board.appendChild(c);}
+    const figs=['♟','♞','♝','♜','♛','♚'];let fi=0;
+    const figEl=document.getElementById('chessFig');
+    figEl.style.transition='opacity .3s';
+    new IntersectionObserver(entries=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){
+          figEl.style.opacity='0';
+          setTimeout(()=>{fi=(fi+1)%figs.length;figEl.textContent=figs[fi];figEl.style.opacity='1';},300);
+        }
+      });
+    },{threshold:.5}).observe(document.querySelector('.chess-section'));
+
+    /* ── TERMINAL TREE ── */
+    const TREE = [
+      {
+        dir: 'dsa_algorithms/',
+        items: [
+          { name: 'graph_traversal.py',    tag: 'algo',  label: 'BFS · DFS · Dijkstra · A*' },
+          { name: 'dynamic_programming.py', tag: 'algo',  label: 'memoize · tabulate · optimal substructure' },
+          { name: 'sorting_variants.py',    tag: 'algo',  label: 'merge · quick · heap · radix · O(n log n)' },
+          { name: 'tree_structures.py',     tag: 'dsa',   label: 'BST · AVL · segment tree · trie' },
+          { name: 'complexity_analysis.md', tag: 'dsa',   label: 'Big-O · amortized · space-time tradeoffs' },
+          { name: 'sliding_window.py',      tag: 'algo',  label: 'two-pointer · prefix sum · monotonic deque' },
+          { name: 'union_find.py',          tag: 'dsa',   label: "Kruskal's · path compression · rank" },
+        ]
+      },
+      {
+        dir: 'cloud_devops/',
+        items: [
+          { name: 'container_orchestration/', tag: 'cloud', label: 'Kubernetes · Helm · pod scheduling' },
+          { name: 'infrastructure_as_code/',  tag: 'cloud', label: 'Terraform · Ansible · declarative config' },
+          { name: 'ci_cd_pipelines.yml',      tag: 'cloud', label: 'GitHub Actions · zero-downtime deploy' },
+          { name: 'distributed_systems.md',   tag: 'cloud', label: 'CAP theorem · consensus · eventual consistency' },
+          { name: 'observability_stack/',     tag: 'cloud', label: 'Prometheus · Grafana · trace · log · metric' },
+          { name: 'networking_fundamentals/', tag: 'sys',   label: 'TCP/IP · BGP · VPN · load balancing' },
+          { name: 'security_hardening.sh',    tag: 'sys',   label: 'IAM · zero-trust · secrets management' },
+        ]
+      }
+    ];
+
+    function buildTree(data){
+      const frag = document.createDocumentFragment();
+
+      /* root line */
+      const root = document.createElement('div');
+      root.className='tree-line';
+      root.innerHTML = '<span class="tree-chars">.</span>';
+      frag.appendChild(root);
+
+      data.forEach((group, gi) => {
+        const isLast = gi === data.length - 1;
+        const branch = isLast ? '└── ' : '├── ';
+        const childPfx = isLast ? '    ' : '│   ';
+
+        /* directory row */
+        const dirRow = document.createElement('div');
+        dirRow.className = 'tree-line';
+        dirRow.innerHTML =
+          `<span class="tree-chars">${branch}</span>` +
+          `<span class="tree-dir">${group.dir}</span>`;
+        frag.appendChild(dirRow);
+
+        group.items.forEach((item, ii) => {
+          const isLastItem = ii === group.items.length - 1;
+          const ib = isLastItem ? '└── ' : '├── ';
+
+          const leaf = document.createElement('div');
+          leaf.className = 'tree-line hoverable';
+          leaf.innerHTML =
+            `<span class="tree-chars">${childPfx}${ib}</span>` +
+            `<span class="tree-leaf-name">${item.name}</span>` +
+            `<span class="tree-leaf-tag tag-${item.tag}"># ${item.label}</span>`;
+          frag.appendChild(leaf);
+        });
+      });
+
+      /* blinking prompt after last item */
+      const promptLine = document.createElement('div');
+      promptLine.className = 'tree-line';
+      promptLine.style.marginTop = '1.5rem';
+      promptLine.innerHTML =
+        `<span style="color:var(--accent)">light</span>` +
+        `<span style="color:#5a5550">@arch:~/skills</span> ` +
+        `<span style="color:var(--muted)">$</span>` +
+        `<span class="tree-cursor"></span>`;
+      frag.appendChild(promptLine);
+
+      document.getElementById('treeBody').appendChild(frag);
+    }
+
+    buildTree(TREE);
+
+    /* ── REVEAL ── */
+    const reveals = document.querySelectorAll('.reveal');
+    new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
+    },{threshold:.15}).observe && reveals.forEach(el=>{
+      new IntersectionObserver((entries)=>{
+        entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
+      },{threshold:.15}).observe(el);
+    });
+
+    /* ── SIDE DOTS ── */
+    const sections=['hero','about','work','contact'];
+    const dots=document.querySelectorAll('.dot');
+    const secObs=new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){
+          dots.forEach(d=>d.classList.remove('active'));
+          const idx=sections.indexOf(e.target.id);
+          if(idx>=0)dots[idx].classList.add('active');
+        }
+      });
+    },{threshold:.4});
+    sections.forEach(id=>{const el=document.getElementById(id);if(el)secObs.observe(el);});
+    dots.forEach((dot,i)=>{
+      dot.addEventListener('click',()=>{
+        const el=document.getElementById(sections[i]);
+        if(el)el.scrollIntoView({behavior:'smooth'});
+      });
+    });
+  </script>
+</body>
+</html>
