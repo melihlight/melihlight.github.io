@@ -297,32 +297,70 @@
 
     /* RESPONSIVE */
     @media (max-width: 768px) {
-      nav { padding: 1.2rem 1.5rem; }
+      nav {
+        position: fixed;
+        padding: 1rem 1.5rem;
+        background: var(--bg);
+        mix-blend-mode: normal;
+        border-bottom: 1px solid var(--border);
+        z-index: 200;
+      }
       .nav-links { gap: 1.2rem; }
-      section { padding: 5rem 1.5rem; }
-      .about-grid, .contact-wrap { grid-template-columns: 1fr; gap: 3rem; }
-      .hero-left, .hero-right { padding: 3rem 1.5rem; }
-      #hero { grid-template-columns: 1fr; height: auto; }
-      .hero-right { min-height: 50vh; }
+      section { padding: 4rem 1.5rem; }
+      .about-grid, .contact-wrap { grid-template-columns: 1fr; gap: 2.5rem; }
+
+      /* HERO mobile — stacked, full viewport height, navbar-aware */
+      #hero {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+        height: 100dvh;
+        padding-top: 0;
+      }
+      .hero-left {
+        padding: 2.5rem 1.5rem 2rem;
+        padding-top: calc(60px + 2.5rem); /* navbar height offset */
+        justify-content: flex-end;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .hero-right {
+        padding: 2.5rem 1.5rem 2rem;
+        justify-content: flex-end;
+        min-height: unset;
+      }
+      .hero-divider { display: none; }
+
+      /* disable split hover on touch */
+      #hero:has(.hero-left:hover) .hero-left,
+      #hero:has(.hero-right:hover) .hero-right { flex: 1; }
+      #hero:has(.hero-left:hover) .hero-right,
+      #hero:has(.hero-right:hover) .hero-left { flex: 1; }
+
+      .hero-title { font-size: clamp(2.4rem, 10vw, 3.5rem); }
+      .hero-sub { font-size: .7rem; }
+
       .side-dots { display: none; }
       .chess-section { height: 40vh; }
       .tree-line { font-size: .68rem; }
       .tree-leaf-tag { display: none; }
     }
     @media (max-width: 480px) {
-      .hero-title { font-size: 2.2rem; }
+      nav { padding: .9rem 1.2rem; }
+      .nav-logo { font-size: .65rem; }
+      .nav-links a { font-size: .55rem; }
+      .nav-links { gap: .9rem; }
+
+      .hero-left { padding-top: calc(55px + 2rem); }
+      .hero-title { font-size: clamp(2rem, 11vw, 2.8rem); }
+
       .about-headline { font-size: 1.8rem; }
       .contact-big { font-size: 2rem; }
-      nav { padding: 1rem; flex-wrap: wrap; justify-content: center; gap: .5rem; }
-      .nav-logo { width: 100%; text-align: center; margin-bottom: .5rem; }
-      .nav-links { gap: 1rem; justify-content: center; width: 100%; }
-      .nav-links a { font-size: .55rem; }
       section { padding: 3rem 1.2rem; }
       footer { padding: 2rem 1.2rem; flex-direction: column; gap: 1rem; text-align: center; }
     }
     @media (hover: none) and (pointer: coarse) {
       #cursor, #cursor-ring { display: none !important; }
-      body, .focus-cell { cursor: auto; }
+      body { cursor: auto; }
     }
   </style>
 </head>
@@ -467,7 +505,7 @@
       <div class="tree-body" id="treeBody"></div>
 
       <div class="tree-summary">
-        <span><em>2</em> directories &nbsp;·&nbsp; <em>14</em> competencies &nbsp;·&nbsp; <em>∞</em> depth</span>
+        <span>2 directories &nbsp;·&nbsp; <em>14</em> competencies &nbsp;·&nbsp; <em>∞</em> depth</span>
       </div>
 
     </div>
@@ -480,10 +518,10 @@
         <h2 class="contact-big reveal">Let's build<br>something<br><em>worth breaking.</em></h2>
       </div>
       <div class="contact-links reveal reveal-delay-1">
-        <a href="mailto:melihlight@gmail.com" class="contact-link">
+        <a href="mailto:hello@melihlight.com" class="contact-link">
           <div>
             <div class="contact-link-label">Email</div>
-            <div class="contact-link-val">melihlight@gmail.com</div>
+            <div class="contact-link-val">hello@melihlight.com</div>
           </div>
           <span class="contact-link-arrow">→</span>
         </a>
